@@ -102,7 +102,7 @@ for name, timestamps in timestamps_dict.items():
 
     # Last session
     num_sessions += 1
-    avr_duration = last - session_start
+    avr_duration += last - session_start
     avr_duration /= num_sessions
 
     # Add computed values as features
