@@ -41,20 +41,28 @@ features = ["ID"]
 for row in rows:
     # Get name of student and action performed
     name = row[5]
-    action_type = row[2]
+    component = row[2]
+    event = row[3]
     # If new name found, create its entry.
     if name not in names:
         names[name] = {"ID": name}
-    # If new action type for this name found, create its entry.
-    if action_type not in names[name]:
-        names[name][action_type] = 0
+    # If new component for this name found, create its entry.
+    if component not in names[name]:
+        names[name][component] = 0
+    # If new event for this name found, create its entry.
+    if event not in names[name]:
+        names[name][event] = 0
     # Increment counter
-    names[name][action_type] += 1
+    names[name][component] += 1
+    names[name][event] += 1
 
     # Keep track of all action types found until now,
     # and add them as features.
-    if action_type not in features:
-        features.append(action_type)
+    if component not in features:
+        features.append(component)
+    if event not in features:
+        features.append(event)
+
 
 print(f"Found {len(features)} features:")
 pp.pprint(features)
@@ -121,7 +129,7 @@ features.append("Session Duration STD")
 
 #%%
 # Export as csv
-with open("names.csv", "w", encoding="utf-8") as out:
+with open("output.csv", "w", encoding="utf-8") as out:
     writer = csv.DictWriter(out, fieldnames=features, restval=0)
 
     writer.writeheader()
