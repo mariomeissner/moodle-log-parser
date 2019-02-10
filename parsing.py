@@ -63,7 +63,6 @@ for row in rows:
     if event not in features:
         features.append(event)
 
-
 print(f"Found {len(features)} features:")
 pp.pprint(features)
 
@@ -97,6 +96,7 @@ for name, timestamps in timestamps_dict.items():
     last = timestamps[0]
     session_start = last
     sessions = []
+    session_months = []
 
     while i < len(timestamps):
 
@@ -107,6 +107,7 @@ for name, timestamps in timestamps_dict.items():
             session_duration = last - session_start
             total_duration += session_duration
             sessions.append(session_duration.total_seconds())
+            session_months.append(session_start.month)
             session_start = current
 
         last = current
@@ -119,13 +120,22 @@ for name, timestamps in timestamps_dict.items():
     sessions = np.array(sessions)
 
     # Add computed values as features
+    # TODO: This can now also be done with numpy
     names[name]["Average Session Duration"] = total_duration.total_seconds()
     names[name]["Number of Sessions"] = num_sessions
     names[name]["Session Duration STD"] = np.std(sessions)
 
+    for month in session_months:
+        if month not in names[name]:
+            names[name][str(month)] = 0
+        names[name][str(month)] += 1
+
 features.append("Average Session Duration")
 features.append("Number of Sessions")
 features.append("Session Duration STD")
+
+for month in range(1, 13):
+    features.append(str(month))
 
 #%%
 # Export as csv
