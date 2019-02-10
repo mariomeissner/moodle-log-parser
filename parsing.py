@@ -1,6 +1,7 @@
 #%%
 import csv
 import pprint
+import numpy as np
 from datetime import datetime, timedelta
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -33,7 +34,7 @@ rows = list(reversed(rows))
 # Process action types
 names = dict()
 # Keeps all the features we will obtain in this script
-features = ["Name"]
+features = ["ID"]
 
 # Iterate over the rows, and create dictionary of students,
 # counting number of actions performed by each.
@@ -42,17 +43,17 @@ for row in rows:
     name = row[5]
     action_type = row[2]
     # If new name found, create its entry.
-    if not name in names:
+    if name not in names:
         names[name] = {"ID": name}
     # If new action type for this name found, create its entry.
-    if not action_type in names[name]:
+    if action_type not in names[name]:
         names[name][action_type] = 0
     # Increment counter
     names[name][action_type] += 1
 
     # Keep track of all action types found until now,
     # and add them as features.
-    if not action_type in features:
+    if action_type not in features:
         features.append(action_type)
 
 print(f"Found {len(features)} features:")
@@ -70,7 +71,7 @@ timestamps_dict = {}
 for row in rows:
     name = row[5]
     timestamp = row[0]
-    if not name in timestamps_dict:
+    if name not in timestamps_dict:
         timestamps_dict[name] = []
     time = datetime.strptime(timestamp, time_format)
     timestamps_dict[name].append(time)
@@ -83,10 +84,11 @@ max_idle = timedelta(minutes=20)
 for name, timestamps in timestamps_dict.items():
 
     num_sessions = 0
-    avr_duration = timedelta(0)
+    total_duration = timedelta(0)
     i = 1
     last = timestamps[0]
     session_start = last
+    sessions = []
 
     while i < len(timestamps):
 
@@ -94,7 +96,9 @@ for name, timestamps in timestamps_dict.items():
         diff = current - last
         if diff > max_idle:
             num_sessions += 1
-            avr_duration += last - session_start
+            session_duration = last - session_start
+            total_duration += session_duration
+            sessions.append(session_duration.total_seconds())
             session_start = current
 
         last = current
@@ -102,13 +106,18 @@ for name, timestamps in timestamps_dict.items():
 
     # Last session
     num_sessions += 1
-    avr_duration += last - session_start
-    avr_duration /= num_sessions
+    total_duration += last - session_start
+    average_duration = total_duration / num_sessions
+    sessions = np.array(sessions)
 
     # Add computed values as features
-    names[name]["Average Session Duration"] = avr_duration.total_seconds()
+    names[name]["Average Session Duration"] = total_duration.total_seconds()
     names[name]["Number of Sessions"] = num_sessions
+    names[name]["Session Duration STD"] = np.std(sessions)
 
+features.append("Average Session Duration")
+features.append("Number of Sessions")
+features.append("Session Duration STD")
 
 #%%
 # Export as csv
@@ -116,5 +125,5 @@ with open("names.csv", "w", encoding="utf-8") as out:
     writer = csv.DictWriter(out, fieldnames=features, restval=0)
 
     writer.writeheader()
-    for Name in names.values():
-        writer.writerow(Name)
+    for id in names.values():
+        writer.writerow(id)
