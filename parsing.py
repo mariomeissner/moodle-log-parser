@@ -3,7 +3,7 @@ import csv
 import pprint
 import numpy as np
 from datetime import datetime, timedelta
-
+from math import isnan
 pp = pprint.PrettyPrinter(indent=4)
 
 
@@ -34,7 +34,7 @@ rows = list(reversed(rows))
 # Process action types
 names = dict()
 # Keeps all the features we will obtain in this script
-features = ["ID"]
+features = []
 
 # Iterate over the rows, and create dictionary of students,
 # counting number of actions performed by each.
@@ -45,7 +45,7 @@ for row in rows:
     event = row[3]
     # If new name found, create its entry.
     if name not in names:
-        names[name] = {"ID": name}
+        names[name] = {}
     # If new component for this name found, create its entry.
     if component not in names[name]:
         names[name][component] = 0
@@ -63,8 +63,8 @@ for row in rows:
     if event not in features:
         features.append(event)
 
-print(f"Found {len(features)} features:")
-pp.pprint(features)
+# print(f"Found {len(features)} features:")
+# pp.pprint(features)
 
 
 #%%
@@ -123,10 +123,11 @@ for name, timestamps in timestamps_dict.items():
     # TODO: This can now also be done with numpy
     names[name]["Average Session Duration"] = total_duration.total_seconds()
     names[name]["Number of Sessions"] = num_sessions
-    names[name]["Session Duration STD"] = np.std(sessions)
+    std = np.std(sessions)
+    names[name]["Session Duration STD"] = std if not isnan(std) else 0
 
     for month in session_months:
-        if month not in names[name]:
+        if str(month) not in names[name]:
             names[name][str(month)] = 0
         names[name][str(month)] += 1
 
