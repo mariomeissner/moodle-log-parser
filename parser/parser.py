@@ -13,34 +13,42 @@ class Parser():
         found in the `csv_path`. 
         '''
         self.log = pd.read_csv(csv_path, parse_dates=[0], infer_datetime_format=True)
-        self.log.sort_values("Hora", inplace=True)
+        self.log.sort_values(["pseudonimo", "Hora"], inplace=True)
         self.indices = self.log["pseudonimo"].unique()
         self.output = pd.DataFrame(index=self.indices)
+        self.names = ["ID"]
 
         # Create deltatime differences
-        self.log["HoraDelta"] = self.log["Hora"] - self.log["Hora"].shift(1)
-        # Session generation: https://stackoverflow.com/questions/17547391/session-generation-from-log-file-analysis-with-pandas
-    def set_course_periods(self):
-        '''
-        Set the time periods that exist in the course, 
-        which will define how student action distribution is computed. 
-        For example, a course with three midterms, these could be the split
-        point for three periods in the course. 
-        Default is months.
-        '''
-        pass
+        self.log["HoraDelta"] = self.log["Hora"] - self.log.shift(1)["Hora"]
 
-    def add_total_action_counts(self):
+
+    def add_total_action_counts(self, names=None):
         '''
         Adds a new column for each action in the log
         counting the number of times each student has performed each action
         in total.
+        @params:
+        names: Dict of mappings to 
         '''
         pass
 
-    def add_total_session_counts(self):
 
-        pass
+    def add_total_session_counts(self, name, delta=timedelta(minutes=20)):
+        '''
+        Adds total number of sessions each student has performed.
+        '''
+
+        self.names.append(name)
+        self.log["NumSesion"] = self.log.groupby("pseudonimo")["HoraDelta"].apply(
+            lambda t: (t >= delta).cumsum())
+        self.output["NumSessions"] = self.log.groupby("pseudonimo")["NumSesion"].max() + 1
+
+
+    def write_file(self, output_path):
+
+        self.output.to_csv(output_path)
+
+
 
 
 
