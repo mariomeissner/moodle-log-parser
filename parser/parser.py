@@ -15,6 +15,7 @@ class Parser:
         event_col=3,
         component_col=2,
         context_col=1,
+        index_dtype=str,
     ):
         """
         Creates a new parser with log data taken from the csv
@@ -30,6 +31,9 @@ class Parser:
         self.date, self.name, self.event, self.component, self.context = self.log.columns.values[
             [date_col, name_col, event_col, component_col, context_col]
         ]
+
+        # Get index dtype
+        self.index_dtype = index_dtype
 
         # Sort by students and then ascending time
         self.log.sort_values([self.name, self.date], inplace=True)
@@ -158,6 +162,17 @@ class Parser:
         # Save
         self.output = self.output.merge(per_forum, on=self.name)
 
+    def add_scores(self, csv_path, name_col=0, na_scores=[]):
+
+        scores = pd.read_csv(csv_path, na_values=na_scores)
+        name_col = scores.columns.values[name_col]
+        if self.index_dtype == int:
+            scores.dropna(inplace=True)
+            scores[name_col] = scores[name_col].astype(int)
+        self.output = self.output.merge(
+            scores, left_on=self.name, right_on=name_col
+        )
+
     def write_file(self, output_path):
 
         self.output.to_csv(output_path)
@@ -166,9 +181,18 @@ class Parser:
 if __name__ == "__main__":
 
     period = (datetime(2017, 9, 1), datetime(2018, 8, 1))
-    parser = Parser("./data/primaria.csv")
+    parser = Parser(
+        "./data/primaria2.csv",
+        date_col=1,
+        name_col=0,
+        event_col=2,
+        component_col=5,
+        context_col=4,
+        index_dtype=int,
+    )
     parser.add_event_counts("total_", period)
     parser.add_component_counts("total_", period)
     parser.add_session_counts("total_sessions", period)
     parser.add_events_per_forum("total_", period)
+    parser.add_scores("data/notas2.csv", na_scores="NP")
     parser.write_file("data/output.csv")
