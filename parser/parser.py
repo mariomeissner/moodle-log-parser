@@ -50,7 +50,7 @@ class Parser:
         period,
         event_filter=None,
         component_filter=None,
-        clip_val=20,
+        clip_val=30,
     ):
         """
         Adds a new column for each event in the log
@@ -158,7 +158,7 @@ class Parser:
         )
 
     def add_events_per_forum(
-        self, prefix, period, component_name="Foro", clip_val=20
+        self, prefix, period, component_name="Foro", clip_val=30
     ):
 
         # Get events per forum
@@ -181,10 +181,31 @@ class Parser:
         # Save
         self.output = self.output.merge(per_forum, on=self.name)
 
-    def add_scores(self, csv_path, name_col=0, score_filter=None, na_scores=[]):
+    def add_scores(
+        self, csv_path, name_col=0, score_filter=[], non_numeric="remove"
+    ):
+        """
+        Appends columns of scores to the data, taken from the csv path.
 
-        scores = pd.read_csv(csv_path, na_values=na_scores)
+        @non_numeric: Can be 'remove', 'nan', 'leave', 
+        or a number to replace it.
+        """
+
+        scores = pd.read_csv(csv_path)
         name_col = scores.columns.values[name_col]
+
+        if non_numeric != "leave":
+            # This turns all non-numeric values to NaNs.
+            for column in scores.columns.values:
+                scores[column] = pd.to_numeric(scores[column], errors="coerce")
+
+            # Remove all NaN rows
+            if non_numeric == "remove":
+                scores.dropna()
+
+            # Replace all NaNs with with value
+            elif not isinstance(non_numeric, str):
+                scores.fillna(non_numeric)
 
         # If indexes were ints with missing values, fix float conversion
         if self.index_dtype == int:
@@ -221,14 +242,6 @@ if __name__ == "__main__":
         index_dtype=int,
     )
 
-    # action_filter = [
-    #     "Tema visto",
-    #     "Informe usuario del curso visto",
-    #     "Curso: G432 - Formación en valores y competencias personales para el docente  - Curso 2016-2017",
-    #     "Cuestionario",
-    #     "Tarea",
-    # ]
-
     parser.add_event_counts("period1_", period1)
     parser.add_event_counts("period2_", period2)
     # parser.add_component_counts("total_", period)
@@ -236,5 +249,7 @@ if __name__ == "__main__":
     parser.add_session_counts("period2_sessions", period2)
     parser.add_events_per_forum("period1_", period1)
     parser.add_events_per_forum("period2_", period2)
-    parser.add_scores("data/notas2.csv", na_scores="NP", score_filter=["FINAL"])
+    parser.add_scores(
+        "data/notas2.csv", score_filter=["FINAL"], non_numeric="remove"
+    )
     parser.write_file("data/output.csv")
