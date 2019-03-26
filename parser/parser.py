@@ -197,6 +197,10 @@ class Parser:
         scores = pd.read_csv(csv_path)
         name_col = scores.columns.values[name_col]
 
+        # Use score filter
+        if score_filter:
+            scores = scores[[name_col] + score_filter]
+
         if non_numeric != "leave":
 
             # This turns all non-numeric values to NaNs.
@@ -207,7 +211,7 @@ class Parser:
             if non_numeric == "remove":
                 scores.dropna()
 
-            # Replace all NaNs with with value
+            # Replace all NaNs with the given value
             elif not isinstance(non_numeric, str):
                 scores.fillna(non_numeric)
 
@@ -215,10 +219,6 @@ class Parser:
         if self.index_dtype == int:
             scores.dropna(inplace=True)
             scores[name_col] = scores[name_col].astype(int)
-
-        # Use score filter
-        if score_filter:
-            scores = scores[[name_col] + score_filter]
 
         # Save
         self.output = self.output.merge(
