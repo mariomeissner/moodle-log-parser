@@ -18,7 +18,7 @@ class Parser:
     ):
         """
         Creates a new parser with log data taken from the csv
-        found in the `csv_path`. 
+        found in the `csv_path`.
         """
 
         # Load csv with pandas
@@ -30,8 +30,11 @@ class Parser:
         )
 
         # Get colnames
-        self.date, self.name, self.event, self.component, self.context = self.log.columns.values[
-            [date_col, name_col, event_col, component_col, context_col]
+        self.date, self.name, self.event, = self.log.columns.values[
+            [date_col, name_col, event_col]
+        ]
+        self.component, self.context = self.log.columns.values[
+            [component_col, context_col]
         ]
 
         # Get index dtype
@@ -187,7 +190,7 @@ class Parser:
         """
         Appends columns of scores to the data, taken from the csv path.
 
-        @non_numeric: Can be 'remove', 'nan', 'leave', 
+        @non_numeric: Can be 'remove', 'nan', 'leave',
         or a number to replace it.
         """
 
@@ -195,6 +198,7 @@ class Parser:
         name_col = scores.columns.values[name_col]
 
         if non_numeric != "leave":
+
             # This turns all non-numeric values to NaNs.
             for column in scores.columns.values:
                 scores[column] = pd.to_numeric(scores[column], errors="coerce")
